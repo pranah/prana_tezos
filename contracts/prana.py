@@ -42,8 +42,12 @@ class Prana(FA2):
                             rentingPrice = sp.TNat,
                             isUpForRenting = sp.TBool,
                             rentee = sp.TAddress,
-                            rentedAtBlock = sp.TNat,  #Tezos has the concept of time, so this might need rewriting for efficiency.
-                            numberOfBlocksToRent = sp.TNat)
+                            rentedAtTime = sp.TTimestamp)
+        
+        
+        # READ READ READ READ READ READ READ READ READ READ 
+        # The time period of renting is assumed to be a constant, rentingPeriod, in minutes
+        self.rentingPeriod = 10
 
 
         # tokenId to TokenDetails big_map
@@ -87,6 +91,7 @@ class Prana(FA2):
         self.tokenData[params.token_id].isbn = params.isbn
         self.tokenData[params.token_id].copyNumber = self.bookInfo[params.isbn].bookSales
         self.tokenData[params.token_id].rentee = sp.address(0)
+        self.tokenData[params.token_id].rentedAtTime = 0
         sp.send(self.bookInfo[params.isbn].publisherAddress, sp.amount)
 
 
@@ -101,25 +106,12 @@ class Prana(FA2):
         sp.verify(self.data.ledger[(sp.sender, params.token_id)], message = "Not authorized") #this check could be wrong.
         sp.verify(self.tokenData[params.token_id].isUpForRenting == False, message = "Can't put for sale while on rent")
         sp.verify(params.resalePrice > 0) # a greater-than-zero price is required.
-        # TODO: Add a verify for renting period being over. 
+        # Checks whether 10 minutes have passed since the book has been rented by someone
+        sp.verify(sp.now > self.tokenData[params.token_id].rentedAtTime.add_minutes(self.rentingPeriod))
         self.tokenData[params.token_id].resalePrice = params.resalePrice
         self.tokenData[params.token_id].isUpForResale = True
         self.upForResaleTokens.add(params.token_id)
 
-
-    # function buyToken(uint256 tokenId, address _tokenRecipient) public payable {
-    #     require(tokenData[tokenId].isUpForResale == true,
-    #     "This token hasn't been put for sale by the token owner");
-
-    #     require(msg.value >= tokenData[tokenId].resalePrice,
-    #     "Your price is too low for this token");
-
-
-    #     safeTransferFrom(ownerOf(tokenId), _tokenRecipient, tokenId);
-
-
-
-    # }
 
     # buy a token that's put for sale by the owner
     @sp.entry_point
@@ -131,6 +123,8 @@ class Prana(FA2):
         sp.send(self.bookInfo[self.tokenData[params.token_id].isbn].publisherAddress, concrete_transactionCut)
         sp.send(self.ownerOf[params.token_id], (sp.amount - concrete_transactionCut))
         FA2_core.transfer(self, params)
+        self.ownerOf[params.token_id] =  sp.sender
+        self.upForResaleTokens.remove(params.tokens_id)
 
     # function to put a token for renting.
     @sp.entry_point
@@ -138,20 +132,37 @@ class Prana(FA2):
         sp.verify(self.ownerOf[params.token_id] == sp.sender, message =  "You're not the token owner")
         sp.verify(self.tokenData[params.token_id].isUpForResale == False, message = "Can't put for rent if it's on sale now")
         if self.tokenData[params.token_id].rentee != sp.address(0):
-            sp.verify(True)
-            #TODO: Figure out the renting timing thing
+            sp.verify(sp.now > self.tokenData[params.token_id].rentedAtTime.add_minutes(self.rentingPeriod))
         self.tokenData[params.token_id].rentingPrice = params.newPrice
         self.tokenData[params.token_id].isUpForRenting = True
         self.tokenData[params.token_id].rentee = sp.address(0)
-        #TODO: Again, figure out the renting timing thing
         self.upForRentingTokens.add(params.token_id)
 
+    
     # function to rent a token
-    ## TODO: Need to implement this well.
-
-    # function to consume the content
-
     @sp.entry_point
+    def rentToken(self, params):
+        sp.verify(self.tokenData[params.token_id].isUpForRenting == True, message="Hasn't been put for renting")
+        sp.verify(self.tokenData[params.token_id].rentee == sp.address(0), message = "Rented by someone already.")
+        sp.verify(sp.amount > self.tokenData[params.token_id].rentingPrice, message="not enough money")
+        sp.verify(self.ownerOf[params.token_id] != sp.sender, message="owner can't rent own token")
+        # given everyone their dues
+        concrete_transactionCut = sp.amount*(self.bookInfo[self.tokenData[params.token_id].isbn].transactionCut/100)
+        sp.send(self.bookInfo[self.tokenData[params.token_id].isbn].publisherAddress, concrete_transactionCut)
+        sp.send(self.ownerOf[params.token_id], (sp.amount - concrete_transactionCut))
+        self.tokenData[params.token_id].rentee = sp.sender
+        self.tokenData[params.token_id].rentedAtTime = sp.now
+        self.upForRentingTokens.remove(params.token_id)
+    
+    # function to consume the content, i.e actually read the book
+    @sp.offchain_view(pure = True)
     def consumeContent(self, params):
         sp.verify(self.ownerOf[params.token_id] == sp.sender or self.tokenData[params.token_id].rentee == sp.sender, message="You're not authorized to view the content")
+        if self.ownerOf[params.token_id] == sp.sender :
+            if self.tokenData[params.token_id].rentee != sp.address(0):
+                sp.verify(sp.now > self.tokenData[params.token_id].rentedAtTime.add_minutes(self.rentingPeriod))
+        elif self.tokenData[params.token_id].rentee == sp.sender:
+            sp.verify(sp.now < self.tokenData[params.token_id].rentedAtTime.add_minutes(self.rentingPeriod))
+        return sp.string(self.bookInfo[self.tokenData[params.token_id].isbn].unEncryptedBookDetailsCID)
 
+    
