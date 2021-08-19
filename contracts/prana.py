@@ -165,4 +165,20 @@ class Prana(FA2):
             sp.verify(sp.now < self.tokenData[params.token_id].rentedAtTime.add_minutes(self.rentingPeriod))
         return sp.string(self.bookInfo[self.tokenData[params.token_id].isbn].unEncryptedBookDetailsCID)
 
+     
+    
+    # view token details for backend stuff
+    # returns a list
+    # all details are returned in one single function, let's see if this works
+    @sp.offchain_view(pure = True)
+    def viewTokenDetails(self, token_id):
+        #TODO: checking existence of the token_id
+        return [self.tokenData[token_id].isbn,
+        self.bookInfo[self.tokenData[token_id].isbn].unEncryptedBookDetailsCID,
+        self.tokenData[token_id].copyNumber,
+        self.tokenData[token_id].resalePrice,
+        self.tokenData[token_id].isUpForResale,
+        self.tokenData[token_id].isUpForRenting,
+        self.tokenData[token_id].rentedAtTime,
+        self.tokenData[token_id].rentingPrice]
     
