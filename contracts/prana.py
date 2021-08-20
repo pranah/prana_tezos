@@ -55,13 +55,16 @@ class Prana(FA2):
 
 
         # The big_map for holding all the list of rented tokens, for each address
-        self.rentedTokensOfEach = sp.list(t = sp.TNat)
+        self.rentedTokensOfEach = sp.set(t = sp.TNat)
         self.rentedTokens = sp.big_map(tkey = sp.TAddress, tvalue = self.rentedTokensOfEach)
 
-        # List of tokens up for resale. Don't need a big_map here.
+        #List of books that's been published. Don't need to remove anything once it's added
+        self.publishedBooks = sp.list(t = sp.TNat)
+        
+        # Dynamic Set of tokens up for resale. Don't need a big_map here.
         self.upForResaleTokens = sp.set(t = sp.TNat)
 
-        # List of tokens up for renting. Don't need a big_map here either.
+        # Dynamic Set of tokens up for renting. Don't need a big_map here either.
         self.upForRentingTokens = sp.set(t = sp.TNat)
 
         # A big_map of tokenOwners. Key is token_id, value is tokenOwner
@@ -78,6 +81,7 @@ class Prana(FA2):
         self.bookInfo[params.isbn].bookPrice = params.bookPrice
         self.bookInfo[params.isbn].transactionCut = params.transactionCut
         self.bookInfo[params.isbn].bookSales = params.bookSales
+        self.publishedBooks.add(params.isbn)
 
     
     # primary purchase. Where a token will be minted.
@@ -146,13 +150,14 @@ class Prana(FA2):
         sp.verify(self.tokenData[params.token_id].rentee == sp.address(0), message = "Rented by someone already.")
         sp.verify(sp.amount > self.tokenData[params.token_id].rentingPrice, message="not enough money")
         sp.verify(self.ownerOf[params.token_id] != sp.sender, message="owner can't rent own token")
-        # given everyone their dues
+        # give everyone their dues
         concrete_transactionCut = sp.amount*(self.bookInfo[self.tokenData[params.token_id].isbn].transactionCut/100)
         sp.send(self.bookInfo[self.tokenData[params.token_id].isbn].publisherAddress, concrete_transactionCut)
         sp.send(self.ownerOf[params.token_id], (sp.amount - concrete_transactionCut))
         self.tokenData[params.token_id].rentee = sp.sender
         self.tokenData[params.token_id].rentedAtTime = sp.now
         self.upForRentingTokens.remove(params.token_id)
+        self.rentedTokensOfEach[sp.sender].add(params.token_id)
     
     # function to consume the content, i.e actually read the book
     @sp.offchain_view(pure = True)
@@ -182,3 +187,39 @@ class Prana(FA2):
         self.tokenData[token_id].rentedAtTime,
         self.tokenData[token_id].rentingPrice]
     
+    
+    # get the lis of all books that's been published
+    # returns the whole list, and frontend can be populated accordingly
+    @sp.offchain_view(pure=True)
+    def viewAllPublishedBooks(self):
+        return sp.list(self.publishedBooks)
+    
+    # get the set of tokens put for sale
+    @sp.offchain_view(pure=True)
+    def viewTokensForSale(self):
+        return sp.set(self.upForResaleTokens)
+    
+    # get the set of tokens put for rent
+    @sp.offchain_view(pure=True)
+    def viewTokensForRent(self):
+        return sp.set(self.upForRentingTokens)
+    
+    # view a given book details
+    @sp.offchain_view(pure=True)
+    def viewBookDetails(self, isbn):
+        sp.verify(self.bookInfo[isbn] != sp.address(0))
+        return [self.bookInfo[isbn].unEncryptedBookDetailsCID,
+                        self.bookInfo[isbn].publisherAddress,
+                        self.bookInfo[isbn].bookPrice,
+                        self.bookInfo[isbn].transactionCut,
+                        self.bookInfo[isbn].bookSales]
+    
+    # view own book details, including the content. For the book's publisher
+    @sp.offchain_view(pure=True)
+    def viewMyBookDetails(self, isbn):
+        sp.verify(self.bookInfo[isbn] != sp.address(0))
+        sp.verify(self.bookInfo[isbn].publisherAddress == sp.sender, message="You're not the book publisher")
+        return sp.record(self.bookInfo[isbn])  # returns the whole record.
+    
+
+
