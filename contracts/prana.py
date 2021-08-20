@@ -165,7 +165,7 @@ class Prana(FA2):
         sp.if self.ownerOf[params.token_id] == sp.sender :
             sp.if self.tokenData[params.token_id].rentee != sp.address(0):
                 sp.verify(sp.now > self.tokenData[params.token_id].rentedAtTime.add_minutes(self.rentingPeriod))
-        sp.elif self.tokenData[params.token_id].rentee == sp.sender:
+        sp.if self.tokenData[params.token_id].rentee == sp.sender:
             sp.verify(sp.now < self.tokenData[params.token_id].rentedAtTime.add_minutes(self.rentingPeriod))
         return sp.string(self.bookInfo[self.tokenData[params.token_id].isbn].unEncryptedBookDetailsCID)
 
@@ -219,4 +219,3 @@ class Prana(FA2):
         sp.verify(self.bookInfo[isbn] != sp.address(0))
         sp.verify(self.bookInfo[isbn].publisherAddress == sp.sender, message="You're not the book publisher")
         return sp.record(self.bookInfo[isbn])  # returns the whole record.
-    
