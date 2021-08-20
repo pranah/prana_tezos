@@ -89,7 +89,7 @@ class Prana(FA2):
     def directPurchase(self, params):
         sp.verify(self.bookInfo[params.isbn].publisherAddress != sp.TAddress(0))
         sp.verify(sp.amount >= self.bookInfo[params.isbn].bookPrice)  # assuming it's sp.amount. TODO: Double-check.
-        FA2.mint(self, params)  # this must be be wrong too
+        FA2.mint(self, params)  # this params has got token_id, the owner's address, and amount=1 as parameters
         self.ownerOf[params.token_id] = sp.sender
         self.bookInfo[params.isbn].bookSales += 1
         self.tokenData[params.token_id].isbn = params.isbn
