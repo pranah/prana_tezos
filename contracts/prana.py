@@ -90,14 +90,15 @@ class Prana(FA2):
         sp.verify(self.bookInfo[params.isbn].publisherAddress != sp.TAddress(0))
         sp.verify(sp.amount >= self.bookInfo[params.isbn].bookPrice)  # assuming it's sp.amount. TODO: Double-check.
         # this params would need tokenOwner from pranaHelper passed in as well.
-        FA2.mint(self, params)  # this params has got token_id, the owner's address, and amount=1 as parameters
-        self.ownerOf[params.token_id] = params.tokenOwner  
+        parameters = (params.isbn, params.tokenOwner)  # this needs to be worked upon
+        FA2.mint(self, parameters)  # this params has got token_id, the owner's address, and amount=1 as parameters
+        self.ownerOf[parameters.token_id] = params.tokenOwner  
         self.bookInfo[params.isbn].bookSales += 1
-        self.tokenData[params.token_id].isbn = params.isbn
-        self.tokenData[params.token_id].copyNumber = self.bookInfo[params.isbn].bookSales
-        self.tokenData[params.token_id].rentee = sp.address(0)
-        self.tokenData[params.token_id].rentedAtTime = 0
-        sp.send(self.bookInfo[params.isbn].publisherAddress, sp.amount)
+        self.tokenData[parameters.token_id].isbn = params.isbn
+        self.tokenData[parameters.token_id].copyNumber = self.bookInfo[params.isbn].bookSales
+        self.tokenData[parameters.token_id].rentee = sp.address(0)
+        self.tokenData[parameters.token_id].rentedAtTime = 0
+        sp.send(self.bookInfo[parameters.isbn].publisherAddress, sp.amount)
 
 
     # put the already purchased token for sale, by the tokenOwner
@@ -133,7 +134,7 @@ class Prana(FA2):
     def putForRent(self, params):
         sp.verify(self.ownerOf[params.token_id] == sp.sender, message =  "You're not the token owner")
         sp.verify(self.tokenData[params.token_id].isUpForResale == False, message = "Can't put for rent if it's on sale now")
-        if self.tokenData[params.token_id].rentee != sp.address(0):
+        sp.if self.tokenData[params.token_id].rentee != sp.address(0):
             sp.verify(sp.now > self.tokenData[params.token_id].rentedAtTime.add_minutes(self.rentingPeriod))
         self.tokenData[params.token_id].rentingPrice = params.newPrice
         self.tokenData[params.token_id].isUpForRenting = True
@@ -161,10 +162,10 @@ class Prana(FA2):
     @sp.offchain_view(pure = True)
     def consumeContent(self, params):
         sp.verify(self.ownerOf[params.token_id] == sp.sender or self.tokenData[params.token_id].rentee == sp.sender, message="You're not authorized to view the content")
-        if self.ownerOf[params.token_id] == sp.sender :
-            if self.tokenData[params.token_id].rentee != sp.address(0):
+        sp.if self.ownerOf[params.token_id] == sp.sender :
+            sp.if self.tokenData[params.token_id].rentee != sp.address(0):
                 sp.verify(sp.now > self.tokenData[params.token_id].rentedAtTime.add_minutes(self.rentingPeriod))
-        elif self.tokenData[params.token_id].rentee == sp.sender:
+        sp.elif self.tokenData[params.token_id].rentee == sp.sender:
             sp.verify(sp.now < self.tokenData[params.token_id].rentedAtTime.add_minutes(self.rentingPeriod))
         return sp.string(self.bookInfo[self.tokenData[params.token_id].isbn].unEncryptedBookDetailsCID)
 
@@ -219,5 +220,3 @@ class Prana(FA2):
         sp.verify(self.bookInfo[isbn].publisherAddress == sp.sender, message="You're not the book publisher")
         return sp.record(self.bookInfo[isbn])  # returns the whole record.
     
-
-
