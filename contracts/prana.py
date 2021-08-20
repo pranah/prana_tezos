@@ -89,18 +89,15 @@ class Prana(FA2):
     def directPurchase(self, params):
         sp.verify(self.bookInfo[params.isbn].publisherAddress != sp.TAddress(0))
         sp.verify(sp.amount >= self.bookInfo[params.isbn].bookPrice)  # assuming it's sp.amount. TODO: Double-check.
+        # this params would need tokenOwner from pranaHelper passed in as well.
         FA2.mint(self, params)  # this params has got token_id, the owner's address, and amount=1 as parameters
-        self.ownerOf[params.token_id] = sp.sender
+        self.ownerOf[params.token_id] = params.tokenOwner  
         self.bookInfo[params.isbn].bookSales += 1
         self.tokenData[params.token_id].isbn = params.isbn
         self.tokenData[params.token_id].copyNumber = self.bookInfo[params.isbn].bookSales
         self.tokenData[params.token_id].rentee = sp.address(0)
         self.tokenData[params.token_id].rentedAtTime = 0
         sp.send(self.bookInfo[params.isbn].publisherAddress, sp.amount)
-
-
-        # const contract = Sp.contract<TUnit>("tz1..." as TAddress).openSome("Invalid contract")
-        # Sp.transfer(Sp.unit, 0, contract)
 
 
     # put the already purchased token for sale, by the tokenOwner
@@ -126,8 +123,9 @@ class Prana(FA2):
         concrete_transactionCut = sp.amount*(self.bookInfo[self.tokenData[params.token_id].isbn].transactionCut/100)
         sp.send(self.bookInfo[self.tokenData[params.token_id].isbn].publisherAddress, concrete_transactionCut)
         sp.send(self.ownerOf[params.token_id], (sp.amount - concrete_transactionCut))
-        FA2_core.transfer(self, params)
-        self.ownerOf[params.token_id] =  sp.sender
+        # the new tokenOwner is the tokenBuyer, passed on from pranaHelper
+        FA2_core.transfer(self, params) 
+        self.ownerOf[params.token_id] =  params.tokenBuyer
         self.upForResaleTokens.remove(params.tokens_id)
 
     # function to put a token for renting.

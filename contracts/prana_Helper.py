@@ -16,10 +16,10 @@ class pranaHelper(sp.contract):
 
     @sp.entry_point
     def mintAToken(self, params):
-        prana = sp.contract(sp.TRecord(isbn = sp.TNat), self.pranaAddress, entry_point = "directPurchase").open_some() #sp.TInt needs to changed to params reference
+        prana = sp.contract(sp.TRecord(isbn = sp.TNat, tokenOwner = sp.TAddress), self.pranaAddress, entry_point = "directPurchase").open_some() #sp.TInt needs to changed to params reference
         # calls prana with sp.amount as the money, and params as the argument. But need to resolve params though
         sp.transfer(params, sp.tez(sp.amount), prana)
 
     def buyTokenFromPrana(self, params):
-        prana = sp.contract(sp.TRecord(token_id = sp.TNat), self.pranaAddress, entry_point = "buyToken").open_some() 
+        prana = sp.contract(sp.TRecord(token_id = sp.TNat, tokenBuyer = sp.TAddress), self.pranaAddress, entry_point = "buyToken").open_some() 
         sp.transfer(params, sp.tez(sp.amount), prana)
