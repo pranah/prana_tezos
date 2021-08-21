@@ -13,7 +13,7 @@ FA2 = sp.import_template("FA2.py")
 #         super().__init__(config, admin)
 
 class Prana(FA2):
-    def __init__(self, config, admin):
+    def __init__(self, config, admin, **extra_storage):
         # FA2.__init__(self, config, admin)
         #setting the contract to be non-fungible
         #self.config.non_fungible = True
@@ -74,6 +74,8 @@ class Prana(FA2):
 
         # A big_map of tokenOwners. Key is token_id, value is tokenOwner
         self.ownerOf = sp.big_map(tkey = sp.TNat, tvalue = sp.TAddress)
+
+        self.init(**extra_storage)
     
     
     # function that would take in the parameters and publish the book on blockchain
