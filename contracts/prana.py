@@ -47,7 +47,10 @@ class Prana(FA2):
         
         # READ READ READ READ READ READ READ READ READ READ 
         # The time period of renting is assumed to be a constant, rentingPeriod, in minutes
-        self.rentingPeriod = 10
+        self.rentingPeriod = sp.TNat(10)
+
+        # incrementing token_ids to be passed in for minting
+        self.enumerable_token_id = sp.TNat(1)
 
 
         # tokenId to TokenDetails big_map
@@ -90,15 +93,16 @@ class Prana(FA2):
         sp.verify(self.bookInfo[params.isbn].publisherAddress != sp.TAddress(0))
         sp.verify(sp.amount >= self.bookInfo[params.isbn].bookPrice)  # assuming it's sp.amount. TODO: Double-check.
         # this params would need tokenOwner from pranaHelper passed in as well.
-        parameters = (params.isbn, params.tokenOwner)  # this needs to be worked upon
-        FA2.mint(self, parameters)  # this params has got token_id, the owner's address, and amount=1 as parameters
-        self.ownerOf[parameters.token_id] = params.tokenOwner  
+        token_Id = self.enumerable_token_id + 1
+        # parameters = (params.isbn, params.tokenOwner)  # this needs to be worked upon
+        FA2.mint(address = params.tokenOwner, amount = 1, metadata = "Empty", token_id = token_Id)  # this params has got token_id, the owner's address, and amount=1 as parameters
+        self.ownerOf[token_Id] = params.tokenOwner  
         self.bookInfo[params.isbn].bookSales += 1
-        self.tokenData[parameters.token_id].isbn = params.isbn
-        self.tokenData[parameters.token_id].copyNumber = self.bookInfo[params.isbn].bookSales
-        self.tokenData[parameters.token_id].rentee = sp.address(0)
-        self.tokenData[parameters.token_id].rentedAtTime = 0
-        sp.send(self.bookInfo[parameters.isbn].publisherAddress, sp.amount)
+        self.tokenData[token_Id].isbn = params.isbn
+        self.tokenData[token_Id].copyNumber = self.bookInfo[params.isbn].bookSales
+        self.tokenData[token_Id].rentee = sp.address(0)
+        self.tokenData[token_Id].rentedAtTime = 0
+        sp.send(self.bookInfo[params.isbn].publisherAddress, sp.amount)
 
 
     # put the already purchased token for sale, by the tokenOwner
