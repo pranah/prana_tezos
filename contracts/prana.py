@@ -1,4 +1,4 @@
-from contracts.FA2 import FA2_config, FA2_core, Token_id_set
+from contracts.FA2 import Batch_transfer, FA2_config, FA2_core, Token_id_set
 import smartpy as sp
 
 FA2 = sp.import_template("FA2.py")
@@ -130,7 +130,14 @@ class Prana(FA2):
         sp.send(self.bookInfo[self.tokenData[params.token_id].isbn].publisherAddress, concrete_transactionCut)
         sp.send(self.ownerOf[params.token_id], (sp.amount - concrete_transactionCut))
         # the new tokenOwner is the tokenBuyer, passed on from pranaHelper
-        FA2_core.transfer(self, params) 
+        # FA2_core.transfer(self, params)
+        FA2.transfer([batch_transfer.item(from_ = self.ownerOf[params.token_id],
+                                            txs = [
+                                                sp.record(to_ = params.tokenBuyer,
+                                                amount = 1,
+                                                token_id = params.token_id)
+                                            ])
+                    ]) 
         self.ownerOf[params.token_id] =  params.tokenBuyer
         self.upForResaleTokens.remove(params.tokens_id)
 
