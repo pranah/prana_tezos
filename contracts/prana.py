@@ -80,7 +80,7 @@ class Prana(FA2):
         sp.verify(self.bookInfo[params.isbn].publisherAddress == sp.TAddress(0))  # might need to double-check it.
         self.bookInfo[params.isbn].encryptedBookDataHash = params.encryptedBookDataHash
         self.bookInfo[params.isbn].unEncryptedBookDetailsCID = params.unEncryptedBookDetailsCID
-        self.bookInfo[params.isbn].publisherAddress = params.publisherAddress
+        self.bookInfo[params.isbn].publisherAddress = sp.sender
         self.bookInfo[params.isbn].bookPrice = params.bookPrice
         self.bookInfo[params.isbn].transactionCut = params.transactionCut
         self.bookInfo[params.isbn].bookSales = params.bookSales
