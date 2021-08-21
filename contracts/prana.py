@@ -84,7 +84,7 @@ class Prana(FA2):
         self.bookInfo[params.isbn].publisherAddress = sp.sender
         self.bookInfo[params.isbn].bookPrice = params.bookPrice
         self.bookInfo[params.isbn].transactionCut = params.transactionCut
-        self.bookInfo[params.isbn].bookSales = params.bookSales
+        self.bookInfo[params.isbn].bookSales = 0
         self.publishedBooks.add(params.isbn)
 
     
