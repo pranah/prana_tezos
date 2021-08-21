@@ -25,7 +25,7 @@ class Prana(FA2):
         self.bookInfo = sp.TRecord(encryptedBookDataHash = sp.TString,
                         unEncryptedBookDetailsCID = sp.TString,
                         publisherAddress = sp.TAddress,
-                        bookPrice = sp.TNat,
+                        bookPrice = sp.TMutez,
                         transactionCut = sp.TNat,
                         bookSales = sp.TNat)
         
@@ -37,9 +37,9 @@ class Prana(FA2):
         # The TokenDetails Record
         self.tokenDetails = sp.TRecord(isbn = sp.TNat,
                             copyNumber = sp.TNat,
-                            resalePrice = sp.TNat,
+                            resalePrice = sp.TMutez,
                             isUpForResale = sp.TBool,
-                            rentingPrice = sp.TNat,
+                            rentingPrice = sp.TMutez,
                             isUpForRenting = sp.TBool,
                             rentee = sp.TAddress,
                             rentedAtTime = sp.TTimestamp)
