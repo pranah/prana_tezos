@@ -14,7 +14,7 @@ FA2 = sp.import_template("FA2.py")
 
 class Prana(FA2):
     def __init__(self, config, admin):
-        FA2.FA2.__init__(self, config, admin)
+        # FA2.__init__(self, config, admin)
         #setting the contract to be non-fungible
         #self.config.non_fungible = True
         FA2_config(non_fungible = True, add_mutez_transfer = True)
@@ -47,10 +47,12 @@ class Prana(FA2):
         
         # READ READ READ READ READ READ READ READ READ READ 
         # The time period of renting is assumed to be a constant, rentingPeriod, in minutes
-        self.rentingPeriod = sp.TNat(10)
+        self.rentingPeriod = sp.TNat
+        self.rentingPeriod = 10
 
         # incrementing token_ids to be passed in for minting
-        self.enumerable_token_id = sp.TNat(1)
+        self.enumerable_token_id = sp.TNat
+        self.enumerable_token_id = 1
 
 
         # tokenId to TokenDetails big_map
@@ -58,7 +60,7 @@ class Prana(FA2):
 
 
         # The big_map for holding all the list of rented tokens, for each address
-        self.rentedTokensOfEach = sp.set(t = sp.TNat)
+        self.rentedTokensOfEach = sp.TSet(t = sp.TNat)
         self.rentedTokens = sp.big_map(tkey = sp.TAddress, tvalue = self.rentedTokensOfEach)
 
         #List of books that's been published. Don't need to remove anything once it's added
