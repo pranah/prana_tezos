@@ -78,6 +78,7 @@ class Prana(FA2):
     @sp.entry_point
     def publishBook(self, params):
         sp.verify(self.bookInfo[params.isbn].publisherAddress == sp.TAddress(0))  # might need to double-check it.
+        sp.verify(params.transactionCut < 100, message = "Can't take all the money")
         self.bookInfo[params.isbn].encryptedBookDataHash = params.encryptedBookDataHash
         self.bookInfo[params.isbn].unEncryptedBookDetailsCID = params.unEncryptedBookDetailsCID
         self.bookInfo[params.isbn].publisherAddress = sp.sender
